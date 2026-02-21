@@ -1,5 +1,6 @@
 <?php
     include '../includes/auth.php';
+    include '../config/db.php';
 
     if($_SESSION['role'] !== 'user'){
         die("Access denied.");

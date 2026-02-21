@@ -20,7 +20,7 @@
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role'] = $user['role'];
 
-            header("Location: dashboard.php" . $user['role'] . ".php");
+            header("Location: dashboard/" . $user['role'] . ".php");
             exit();
         }
         else{
