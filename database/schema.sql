@@ -36,7 +36,9 @@ CREATE TABLE power_logs(
     solar_output INT NOT NULL,
     battery_level INT NOT NULL,
     mode ENUM('normal','critical') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    storm_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (storm_id) REFERENCES solar_storms(id) ON DELETE SET NULL
 );
 
 -- Emergency logs

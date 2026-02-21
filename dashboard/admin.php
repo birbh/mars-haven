@@ -33,10 +33,8 @@
         $sql="INSERT INTO solar_storms(intensity,description) VALUES($intense,'$desc')";
         if($conn->query($sql)){
             echo "<p style='color:green;'>Data logged successfully.</p>";
-
             $st_id=$conn->insert_id;
             $radiation=$intense*12.5;
-
             if($radiation<50){
                 $stat="safe";
             }
@@ -45,6 +43,7 @@
             }
             else{
                 $stat="danger";
+                $conn->query("INSERT INTO events(storm_id,event_type,notes) VALUES($st_id,'Emergency Shelter Activated','Radiation exceeded safe threshold.')");
             }
 
             $radins="INSERT INTO radiation_logs (storm_id,radiation_level,status) VALUES($st_id,$radiation,'$stat')";
@@ -53,6 +52,25 @@
             }
             else{
                 echo "<p style='color:green;'>Radiation data logged successfully.</p>";
+            }
+
+            $solar = 100 - $intense * 8;
+            $battery = 100 - $intense * 10;
+
+            if ($solar < 40) {
+                $mode = "critical";
+            } 
+            else {
+                $mode = "normal";
+            }
+
+            $solardata = "INSERT INTO power_logs (storm_id,solar_output, battery_level, mode)
+                          VALUES ($st_id,$solar, $battery, '$mode')";
+
+            if ($conn->query($solardata)) {
+                echo "<p style='color:green;'>Power data logged successfully.</p>";
+            } else {
+                echo "<p style='color:red;'>Error logging power data.</p>";
             }
         }
         else{
