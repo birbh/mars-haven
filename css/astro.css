@@ -47,7 +47,7 @@ tr:nth-child(even){
 }
 
 .status-safe{
-    color: #ffd43b;
+    color: #70cb38;
 }
 
 .status-warning{
@@ -58,4 +58,16 @@ tr:nth-child(even){
 .status-danger{
     color: #ff4d4d;
     font-weight: bold;
+}
+
+.healbar{
+    height: 20px;
+    background: #2f2c2c;
+    border-radius: 50px;
+    overflow: hidden;
+}
+
+.healfill{
+    height: 100%;
+    transition: width 0.5s ease-in-out;
 }
