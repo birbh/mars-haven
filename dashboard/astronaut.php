@@ -4,7 +4,10 @@
     if($_SESSION['role'] !== 'astronaut'){
         die("Access denied.");
     }
+    $isRefresh = isset($_GET['refresh']);
+    
 ?>
+<?php if(!$isRefresh): ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,8 +17,10 @@
 </head>
 <body>
     <h1>Astronaut Dashboard</h1>
-    <a href="../logout.php">Logout</a>
-
+    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
+    
+    <div id="dashboard-content">
+    <?php endif; ?>
     <?php
     // radiation data
         $radlog="SELECT * FROM radiation_logs ORDER BY created_at DESC LIMIT 1";
@@ -244,7 +249,10 @@
                             )
                             ");
                         }
-                        }                
+                        }   
+                        else{
+                            echo "<p class='status-safe'>No significant storm escalation detected.</p>";
+                        }             
                     }
                 echo "</div>";
             }
@@ -254,5 +262,8 @@
         }
         
     ?>
+    <?php if(!$isRefresh): ?>
+    </div> <script src="../js/astro.js"></script>
 </body>
 </html>
+<?php endif; ?>

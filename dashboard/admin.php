@@ -1,7 +1,6 @@
 <?php
     include '../includes/auth.php';
     include '../config/db.php';
-
     if($_SESSION['role'] !== 'admin'){
         die("Access denied (dont be sneaky).");
     }
@@ -11,10 +10,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/admin.css">
 </head>
 <body>
-    <h2>Admin Dashboard</h2>
-    <h3>Log the Solar storm data</h3>
+    <h1>Admin Dashboard</h1>
+    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
+    <h2>Log the Solar storm data</h2>
+    <div class="card">
     <form method="POST">
         <label>Storm Intensity(1-10):</label>
         <input type="number" name="intensityy" min="1" max="10" required><br><br>
@@ -22,8 +24,10 @@
         <textarea name="desc" placeholder="Describe storm(optional)....."></textarea><br><br>
         <input type="submit" name="submit" value="Log the data">
 </form>
+</div>
     <hr>
-    <h3>Recently Logged Data</h3>
+    <div class="card">
+    <h2>Recently Logged Data</h2>
 
 
 <?php
@@ -32,7 +36,7 @@
         $desc=$_POST['desc'];
         $sql="INSERT INTO solar_storms(intensity,description) VALUES($intense,'$desc')";
         if($conn->query($sql)){
-            echo "<p style='color:green;'>Data logged successfully.</p>";
+            echo "<p class='success'>Data logged successfully.</p>";
             $st_id=$conn->insert_id;
             $radiation=$intense*12.5;
             if($radiation<50){
@@ -48,10 +52,10 @@
 
             $radins="INSERT INTO radiation_logs (storm_id,radiation_level,status) VALUES($st_id,$radiation,'$stat')";
             if(!$conn->query($radins)){
-                echo "<p style='color:red;'>Error logging radiation data:</p>";
+                echo "<p class='error'>Error logging radiation data:</p>";
             }
             else{
-                echo "<p style='color:green;'>Radiation data logged successfully.</p>";
+                echo "<p class='success'>Radiation data logged successfully.</p>";
             }
 
             $solar = 100 - $intense * 8;
@@ -68,13 +72,13 @@
                           VALUES ($st_id,$solar, $battery, '$mode')";
 
             if ($conn->query($solardata)) {
-                echo "<p style='color:green;'>Power data logged successfully.</p>";
+                echo "<p class='success'>Power data logged successfully.</p>";
             } else {
-                echo "<p style='color:red;'>Error logging power data.</p>";
+                echo "<p class='error'>Error logging power data.</p>";
             }
         }
         else{
-            echo "<p style='color:red;'>Error logging storm data:</p>";
+            echo "<p class='error'>Error logging storm data:</p>";
         }
 
 
@@ -100,5 +104,6 @@
     else
         echo"<p>No storm data found.<br>Log some data to see it.</p>";
 ?>
+</div>
 </body>
 </html> 

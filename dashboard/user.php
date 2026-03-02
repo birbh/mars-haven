@@ -1,23 +1,27 @@
 <?php
     include '../includes/auth.php';
     include '../config/db.php';
-
     if($_SESSION['role'] !== 'user'){
         die("Access denied.");
     }
+    $isRefresh = isset($_GET['refresh']);
 ?>
+<?php if(!$isRefresh): ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>User Dashboard</title>
+    <link rel="stylesheet" href="../css/user.css">
 </head>
 <body>
     <h1>User Dashboard</h1>
-    <a href="../logout.php">Logout</a>
+    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
+    <div class="card"><h3>Latest Solar Storm Data</h3>
+    <div id='dashboard-content'>
+    <?php endif; ?>
+        <?php
 
-    <?php
-        echo "<h3>Latest Solar Storm Data</h3>";
         $sql="SELECT * FROM solar_storms ORDER BY created_at DESC LIMIT 1";
             $res=$conn->query($sql);
             if($res &&$res->num_rows>0){
@@ -42,13 +46,13 @@
                 <li>Status: ".$data['status']."</li>
                 <li>Recorded At: ".$data['created_at']."</li></ul>";
                 if($data['status']==="danger"){
-                    echo "<p style='color:red;'>Danger: Radiation levels are dangerous! Go to the shelter immediately.</p>";
+                    echo "<p class='status-danger'>Radiation levels are dangerous! </p>";
                 }
                 elseif($data['status']==="warning"){
-                    echo "<p style='color:orange;'>Warning: Radiation levels are elevated. Limit outdoor activities.</p>";
+                    echo "<p class='status-warning'>Radiation levels are elevated.</p>";
                 }
                 else{
-                    echo "<p style='color:green;'>Radiation levels are within safe operational limits.</p>";
+                    echo "<p class='status-safe'>Radiation levels are within safe operational limits.</p>";
             }}
             else{
                 echo "<p>No radiation data yet....</p>";
@@ -66,18 +70,14 @@
                 <li>Mode: ".$data['mode']."</li>
                 <li>Recorded At: ".$data['created_at']."</li></ul>";
                 if ($data['mode']==="normal"){
-                    echo "<p style='color:green;'>Power systems are operating normally.</p>";
+                    echo "<p class='status-safe'>Power systems are operating normally.</p>";
                 }
                 else
-                    echo "<p style='color:red;'>Power systems are in critical mode. Conserve energy where possible.</p>";
+                    echo "<p class='status-danger'>Power systems are in critical mode.</p>";
             }
-
-
-    ?>
-<body>
+        ?>
+    <?php if(!$isRefresh): ?>
+    </div></div><script src="../js/user.js"></script>
+</body>
 </html>
-
-
-<!-- 🔵 Add automatic emergency event logging when radiation = danger
-	•	🔵 Add power reaction to storm intensity
-	•	🔵 Improve UI layout (make it look engineered) -->
+<?php endif; ?>
