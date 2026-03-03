@@ -51,9 +51,29 @@ input[type="submit"] {
     transition: background-color 0.3s;
 }
 
-input[type="submit"]:hover {
+.homebut{
+    display: block;
+    width: 50%;
+    padding: 12px;
+    background-color: #dc7035;
+    border: none;
+    border-radius: 5px;
+    box-sizing: border-box;
+    appearance: none;
+    color: #ffe8cc;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover, .homebut:hover {
     background-color: #ffa94d;
 }
+
 
 .error{
     color: #ff4d4d;

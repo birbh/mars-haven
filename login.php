@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="css/login.css">
 </head>
 <body>
+    
     <div class="loginctr">
         <h2>Login to Mars Haven</h2>
 
@@ -36,8 +37,8 @@
             <input type="text" placeholder="Username or Email" name="login" required>
             <input type="password" placeholder="Password" name="password" required>
             <input type="submit" name="submit" value="Login">
+            <button type="button" class="homebut" onclick="location.href='index.php'">Home</button>
         </form>
-
         <p class="error"><?php echo $error; ?></p>
     </div>
 </body>
