@@ -8,14 +8,8 @@
     
 ?>
 <?php if(!$isRefresh): ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Astronaut Dashboard</title>
-    <link rel="stylesheet" href="../css/astro.css">
-</head>
-<body>
+<?php include '../includes/header.php';?>
+    <link rel="stylesheet" href="../assets/css/astro.css">
     <h1>Astronaut Dashboard</h1>
     <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     
@@ -263,7 +257,6 @@
         
     ?>
     <?php if(!$isRefresh): ?>
-    </div> <script src="../js/astro.js"></script>
-</body>
-</html>
+    </div> <script src="../assets/js/astro.js"></script>
+<?php include '../includes/footer.php';?>
 <?php endif; ?>

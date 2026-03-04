@@ -7,21 +7,15 @@
     $isRefresh = isset($_GET['refresh']);
 ?>
 <?php if(!$isRefresh): ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>User Dashboard</title>
-    <link rel="stylesheet" href="../css/user.css">
-</head>
-<body>
+
+  <?php include '../includes/header.php';?>
+    <link rel="stylesheet" href="../assets/css/user.css">
     <h1>User Dashboard</h1>
     <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     <div class="card"><h3>Latest Solar Storm Data</h3>
     <div id='dashboard-content'>
     <?php endif; ?>
-        <?php
-
+<?php
         $sql="SELECT * FROM solar_storms ORDER BY created_at DESC LIMIT 1";
             $res=$conn->query($sql);
             if($res &&$res->num_rows>0){
@@ -77,7 +71,6 @@
             }
         ?>
     <?php if(!$isRefresh): ?>
-    </div></div><script src="../js/user.js"></script>
-</body>
-</html>
+    </div></div><script src="../assets/js/user.js"></script>
+<?php include '../includes/footer.php';?>
 <?php endif; ?>

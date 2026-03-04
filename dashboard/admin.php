@@ -5,14 +5,9 @@
         die("Access denied (dont be sneaky).");
     }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="../css/admin.css">
-</head>
-<body>
+
+<?php include '../includes/header.php';?>
+    <link rel="stylesheet" href="../assets/css/admin.css">
     <h1>Admin Dashboard</h1>
     <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     <h2>Log the Solar storm data</h2>
@@ -28,7 +23,6 @@
     <hr>
     <div class="card">
     <h2>Recently Logged Data</h2>
-
 
 <?php
     if(isset($_POST['submit'])){
@@ -105,5 +99,4 @@
         echo"<p>No storm data found.<br>Log some data to see it.</p>";
 ?>
 </div>
-</body>
-</html> 
+<?php include '../includes/footer.php';?>
