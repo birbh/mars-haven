@@ -11,9 +11,7 @@
   <?php include '../includes/header.php';?>
     <link rel="stylesheet" href="../assets/css/user.css">
     <h1>User Dashboard</h1>
-    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     <div class="card"><h3>Latest Solar Storm Data</h3>
-    <div id='dashboard-content'>
     <?php endif; ?>
 <?php
         $sql="SELECT * FROM solar_storms ORDER BY created_at DESC LIMIT 1";
@@ -69,8 +67,9 @@
                 else
                     echo "<p class='status-danger'>Power systems are in critical mode.</p>";
             }
+        echo "<hr><h3>24-hr analysis</h3>";  
         ?>
     <?php if(!$isRefresh): ?>
-    </div></div><script src="../assets/js/user.js"></script>
+    </div><script src="../assets/js/user.js"></script>
 <?php include '../includes/footer.php';?>
 <?php endif; ?>

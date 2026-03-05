@@ -9,7 +9,6 @@
 <?php include '../includes/header.php';?>
     <link rel="stylesheet" href="../assets/css/admin.css">
     <h1>Admin Dashboard</h1>
-    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     <h2>Log the Solar storm data</h2>
     <div class="card">
     <form method="POST">

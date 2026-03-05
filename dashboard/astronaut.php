@@ -11,7 +11,6 @@
 <?php include '../includes/header.php';?>
     <link rel="stylesheet" href="../assets/css/astro.css">
     <h1>Astronaut Dashboard</h1>
-    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     
     <div id="dashboard-content">
     <?php endif; ?>
