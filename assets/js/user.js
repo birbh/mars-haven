@@ -1,13 +1,14 @@
-setInterval(()=>{
-    fetch('user.php?refresh=1')
-    .then((response)=> response.text())
-    .then((data)=>{
-        const dash=document.getElementById('dashboard-content');
-        if(dash){
-            dash.innerHTML=data;
-        }
-    })
-    .catch((error)=>{
-        console.log('Refresh Failed:',error);
-    })
-},15000);
+function refresh_user_charts() {
+    if (typeof load_user_charts === 'function') {
+        load_user_charts();
+    }
+
+    const note_el = document.getElementById('refresh_note');
+    if (note_el) {
+        note_el.textContent = 'Refresh: ' + new Date().toLocaleTimeString();
+        note_el.className = 'status_safe';
+    }
+}
+
+refresh_user_charts();
+setInterval(refresh_user_charts, 15000);

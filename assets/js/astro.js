@@ -1,13 +1,14 @@
-setInterval(()=>{
-    fetch('astronaut.php?refresh=1')
-    .then((response)=> response.text())
-    .then((data)=>{
-        const dash=document.getElementById('dashboard-content');
-        if(dash){
-            dash.innerHTML=data;
-        }
-    })
-    .catch((error)=>{
-        console.log('Refresh Failed:',error);
-    })
-},7000);
+function refresh_astro_charts() {
+    if (typeof load_astro_charts === 'function') {
+        load_astro_charts();
+    }
+
+    const note_el = document.getElementById('refresh_note_astro');
+    if (note_el) {
+        note_el.textContent = 'Refresh: ' + new Date().toLocaleTimeString();
+        note_el.className = 'status_safe';
+    }
+}
+
+refresh_astro_charts();
+setInterval(refresh_astro_charts, 10000);
