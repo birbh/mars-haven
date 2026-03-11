@@ -22,7 +22,7 @@ foreach ($rows as $row) {
     $solar_output[] = (int) $row['solar_output'];
     $battery_level[] = (int) $row['battery_level'];
 
-    // Map backup status into a chartable value (0 or 100).
+    // map backup status into a chartable value (0 or 100).
     $backup_status[] = $row['mode'] === 'critical' ? 100 : 0;
     $latest = $row;
 }

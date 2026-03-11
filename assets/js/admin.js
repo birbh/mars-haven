@@ -21,5 +21,14 @@ start_auto_ref({
 
         const tag = active_el.tagName;
         return !(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+    },
+    on_refresh: function () {
+        if (typeof load_admin_charts === 'function') {
+            load_admin_charts();
+        }
     }
 });
+
+if (typeof load_admin_charts === 'function') {
+    load_admin_charts();
+}

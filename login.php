@@ -57,6 +57,7 @@ if (isset($_POST['submit'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mars Haven - Login</title>
     <link rel="stylesheet" href="assets/css/login.css">
+    <script src="assets/js/sound_system.js" defer></script>
 </head>
 <body>
     <main class="login_shell">

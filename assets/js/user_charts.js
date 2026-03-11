@@ -1,63 +1,72 @@
 const user_chart_store = {
-    storm: null,
-    radiation: null,
-    power: null,
-    health: null,
+    activity: null,
 };
 
-function set_text(id, value) {
+const user_palette = {
+    primary_blue: '#4da3ff',
+    warning_orange: '#f59e0b',
+    danger_red: '#ef4444',
+    safe_green: '#22c55e',
+    grid: 'rgba(42, 52, 66, 0.45)',
+    text: '#9eabb9',
+};
+
+function user_set_text(id, value) {
     const el = document.getElementById(id);
     if (el) {
         el.textContent = value;
     }
 }
 
-function set_status_note(id, status, safe_msg, warn_msg, danger_msg) {
+function user_set_badge(id, status) {
     const el = document.getElementById(id);
     if (!el) {
         return;
     }
 
-    if (status === 'danger' || status === 'critical') {
-        el.className = 'status_danger';
-        el.textContent = danger_msg;
+    el.classList.remove('status_safe', 'status_warn', 'status_critical');
+
+    if (status === 'critical') {
+        el.classList.add('status_critical');
+        el.textContent = 'Critical';
         return;
     }
 
-    if (status === 'warning') {
-        el.className = 'status_warn';
-        el.textContent = warn_msg;
+    if (status === 'warn') {
+        el.classList.add('status_warn');
+        el.textContent = 'Warn';
         return;
     }
 
-    el.className = 'status_safe';
-    el.textContent = safe_msg;
+    el.classList.add('status_safe');
+    el.textContent = 'Safe';
 }
 
-function user_chart_options() {
+function user_line_options() {
     return {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 300 },
+        animation: { duration: 220 },
         plugins: {
             legend: {
-                labels: { color: '#9eabb9' },
+                labels: { color: user_palette.text },
             },
         },
         scales: {
             x: {
-                ticks: { color: '#9eabb9' },
-                grid: { color: '#2a3442' },
+                ticks: { color: user_palette.text },
+                grid: { color: user_palette.grid, lineWidth: 1 },
             },
             y: {
-                ticks: { color: '#9eabb9' },
-                grid: { color: '#2a3442' },
+                beginAtZero: true,
+                ticks: { color: user_palette.text },
+                grid: { color: user_palette.grid, lineWidth: 1 },
             },
         },
     };
 }
 
-function user_render_chart(chart_key, canvas_id, type, data, options) {
+function user_render_or_replace(chart_key, canvas_id, data, options) {
     const canvas = document.getElementById(canvas_id);
     if (!canvas || typeof Chart === 'undefined') {
         return;
@@ -65,187 +74,114 @@ function user_render_chart(chart_key, canvas_id, type, data, options) {
 
     if (user_chart_store[chart_key]) {
         const live_chart = user_chart_store[chart_key];
-        live_chart.data.labels = data.labels;
-        live_chart.data.datasets = data.datasets;
-        live_chart.options = options;
-        live_chart.update('none');
-        return;
+        if (live_chart.canvas !== canvas) {
+            live_chart.destroy();
+            user_chart_store[chart_key] = null;
+        } else {
+            live_chart.data.labels = data.labels;
+            live_chart.data.datasets = data.datasets;
+            live_chart.options = options;
+            live_chart.update('none');
+            return;
+        }
     }
 
     user_chart_store[chart_key] = new Chart(canvas.getContext('2d'), {
-        type: type,
+        type: 'line',
         data: data,
         options: options,
     });
 }
 
-function user_load_storm_chart() {
-    return fetch('../api/storm_data.php')
-        .then((res) => res.json())
-        .then((payload) => {
-            if (payload.latest) {
-                set_text('user_storm_intensity', String(payload.latest.intensity ?? 'N/A'));
-                set_text('user_storm_description', payload.latest.description || 'N/A');
-                set_text('user_storm_time', payload.latest.created_at || 'N/A');
-            }
-
-            user_render_chart(
-                'storm',
-                'chart_user_storm',
-                'line',
-                {
-                    labels: payload.labels || [],
-                    datasets: [
-                        {
-                            label: 'Storm intensity',
-                            data: payload.values || [],
-                            borderColor: '#f5a93b',
-                            backgroundColor: 'rgba(245, 169, 59, 0.12)',
-                            tension: 0.25,
-                            fill: true,
-                        },
-                    ],
-                },
-                user_chart_options()
-            );
-        });
-}
-
-function user_load_radiation_chart() {
-    return fetch('../api/radiation_data.php')
-        .then((res) => res.json())
-        .then((payload) => {
-            if (payload.latest) {
-                const status = String(payload.latest.status || 'safe');
-                set_text('user_rad_level', String(payload.latest.radiation_level ?? 'N/A'));
-                set_text('user_rad_status', status);
-                set_text('user_rad_time', payload.latest.created_at || 'N/A');
-
-                set_status_note(
-                    'user_rad_note',
-                    status,
-                    'Radiation levels are within safe operational limits.',
-                    'Radiation levels are elevated.',
-                    'Radiation levels are dangerous.'
-                );
-            }
-
-            user_render_chart(
-                'radiation',
-                'chart_user_radiation',
-                'line',
-                {
-                    labels: payload.labels || [],
-                    datasets: [
-                        {
-                            label: 'Radiation level',
-                            data: payload.values || [],
-                            borderColor: '#ff5a66',
-                            backgroundColor: 'rgba(255, 90, 102, 0.1)',
-                            tension: 0.25,
-                            fill: true,
-                        },
-                    ],
-                },
-                user_chart_options()
-            );
-        });
-}
-
-function user_load_power_chart() {
-    return fetch('../api/power_data.php')
-        .then((res) => res.json())
-        .then((payload) => {
-            if (payload.latest) {
-                const mode = String(payload.latest.mode || 'normal');
-                set_text('user_power_solar', String(payload.latest.solar_output ?? 'N/A'));
-                set_text('user_power_battery', String(payload.latest.battery_level ?? 'N/A'));
-                set_text('user_power_mode', mode);
-                set_text('user_power_time', payload.latest.created_at || 'N/A');
-
-                set_status_note(
-                    'user_power_note',
-                    mode,
-                    'Power systems are operating normally.',
-                    'Power systems are in warning state.',
-                    'Power systems are in critical mode.'
-                );
-            }
-
-            user_render_chart(
-                'power',
-                'chart_user_power',
-                'bar',
-                {
-                    labels: payload.labels || [],
-                    datasets: [
-                        {
-                            label: 'Solar output',
-                            data: payload.solar_output || [],
-                            backgroundColor: '#4da3ff',
-                        },
-                        {
-                            label: 'Battery level',
-                            data: payload.battery_level || [],
-                            backgroundColor: '#57d783',
-                        },
-                        {
-                            label: 'Backup status',
-                            data: payload.backup_status || [],
-                            backgroundColor: '#f5a93b',
-                        },
-                    ],
-                },
-                user_chart_options()
-            );
-        });
-}
-
-function user_load_health_chart() {
+function user_load_health_summary() {
     return fetch('../api/health_data.php')
         .then((res) => res.json())
         .then((payload) => {
             const health = Math.max(0, Math.min(100, Number(payload.health || 0)));
+            user_set_text('user_health_value', String(health) + '%');
+            user_set_text('user_health_time', new Date().toLocaleTimeString());
 
-            set_text('user_avg_rad', payload.avg_radiation !== null ? Number(payload.avg_radiation).toFixed(2) : 'N/A');
-            set_text('user_avg_battery', payload.avg_battery !== null ? Number(payload.avg_battery).toFixed(2) + '%' : 'N/A');
-            set_text('user_events_24h', String(payload.events_24h ?? 0));
+            if (health >= 80) {
+                user_set_badge('user_health_status', 'safe');
+            } else if (health >= 50) {
+                user_set_badge('user_health_status', 'warn');
+            } else {
+                user_set_badge('user_health_status', 'critical');
+            }
+        });
+}
 
-            user_render_chart(
-                'health',
-                'chart_user_health',
-                'doughnut',
+function user_load_storm_summary_and_chart() {
+    return fetch('../api/storm_data.php')
+        .then((res) => res.json())
+        .then((payload) => {
+            if (payload.latest) {
+                const intensity = Number(payload.latest.intensity || 0);
+                user_set_text('user_storm_time', payload.latest.created_at || 'N/A');
+
+                if (intensity >= 8) {
+                    user_set_text('user_storm_level', 'High');
+                    user_set_badge('user_storm_status', 'critical');
+                } else if (intensity >= 5) {
+                    user_set_text('user_storm_level', 'Moderate');
+                    user_set_badge('user_storm_status', 'warn');
+                } else {
+                    user_set_text('user_storm_level', 'Low');
+                    user_set_badge('user_storm_status', 'safe');
+                }
+            }
+
+            user_render_or_replace(
+                'activity',
+                'user_chart_activity',
                 {
-                    labels: ['Healthy', 'Risk'],
+                    labels: payload.labels || [],
                     datasets: [
                         {
-                            data: [health, 100 - health],
-                            backgroundColor: ['#57d783', '#2a3442'],
-                            borderColor: ['#57d783', '#2a3442'],
+                            label: 'Activity index',
+                            data: payload.values || [],
+                            borderColor: user_palette.primary_blue,
+                            backgroundColor: 'rgba(77, 163, 255, 0.08)',
+                            fill: true,
+                            tension: 0.2,
+                            borderWidth: 2,
                         },
                     ],
                 },
-                {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 300 },
-                    plugins: {
-                        legend: {
-                            labels: { color: '#9eabb9' },
-                        },
-                    },
-                }
+                user_line_options()
             );
+        });
+}
+
+function user_load_radiation_summary() {
+    return fetch('../api/radiation_data.php')
+        .then((res) => res.json())
+        .then((payload) => {
+            if (!payload.latest) {
+                return;
+            }
+
+            const level = Number(payload.latest.radiation_level || 0);
+            const status = String(payload.latest.status || 'safe');
+            user_set_text('user_rad_level', level.toFixed(1));
+            user_set_text('user_rad_time', payload.latest.created_at || 'N/A');
+
+            if (status === 'danger' || status === 'critical') {
+                user_set_badge('user_rad_status', 'critical');
+            } else if (status === 'warning') {
+                user_set_badge('user_rad_status', 'warn');
+            } else {
+                user_set_badge('user_rad_status', 'safe');
+            }
         });
 }
 
 function load_user_charts() {
     Promise.all([
-        user_load_storm_chart(),
-        user_load_radiation_chart(),
-        user_load_power_chart(),
-        user_load_health_chart(),
+        user_load_health_summary(),
+        user_load_storm_summary_and_chart(),
+        user_load_radiation_summary(),
     ]).catch((err) => {
-        console.log('User chart load failed:', err);
+        console.log('User summary load failed:', err);
     });
 }

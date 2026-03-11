@@ -3,8 +3,16 @@ include '../includes/auth.php';
 include '../config/db.php';
 include '../lib/db_tools.php';
 
-if ($_SESSION['role'] !== 'admin') {
-    die('Access denied.');
+$role = $_SESSION['role'] ?? '';
+if ($role !== 'admin') {
+    if ($role === 'astronaut') {
+        header('Location: astronaut.php');
+    } elseif ($role === 'user') {
+        header('Location: user.php');
+    } else {
+        header('Location: ../login.php');
+    }
+    exit();
 }
 
 $is_refresh = isset($_GET['refresh']);
@@ -229,28 +237,208 @@ $row_sql = 'SELECT * FROM solar_storms' . $where_sql . ' ORDER BY created_at DES
 $row_types = $query_types . 'ii';
 $row_params = array_merge($query_params, [$per_page, $offset]);
 $storm_rows = db_fetch_all($conn, $row_sql, $row_types, $row_params);
+
+$storm_row = db_fetch_one($conn, 'SELECT * FROM solar_storms ORDER BY created_at DESC LIMIT 1');
+$rad_row = db_fetch_one($conn, 'SELECT * FROM radiation_logs ORDER BY created_at DESC LIMIT 1');
+$pwr_row = db_fetch_one($conn, 'SELECT * FROM power_logs ORDER BY created_at DESC LIMIT 1');
+$event_log = db_fetch_all($conn, 'SELECT event_type, notes, created_at FROM events ORDER BY created_at DESC LIMIT 10');
+
+function status_cls($value)
+{
+    if ($value === 'danger' || $value === 'critical') {
+        return 'status_critical';
+    }
+
+    if ($value === 'warning') {
+        return 'status_warn';
+    }
+
+    return 'status_safe';
+}
+
+function event_severity_cls($event_type, $notes)
+{
+    $combined = strtolower($event_type . ' ' . $notes);
+
+    if (strpos($combined, 'critical') !== false || strpos($combined, 'emergency') !== false || strpos($combined, 'danger') !== false) {
+        return 'status_critical';
+    }
+
+    if (strpos($combined, 'warn') !== false || strpos($combined, 'elevated') !== false || strpos($combined, 'monitor') !== false) {
+        return 'status_warn';
+    }
+
+    return 'status_safe';
+}
+
+function event_severity_label($event_type, $notes)
+{
+    $cls = event_severity_cls($event_type, $notes);
+    if ($cls === 'status_critical') {
+        return 'Critical';
+    }
+    if ($cls === 'status_warn') {
+        return 'Warn';
+    }
+
+    return 'Safe';
+}
 ?>
 
 <?php if (!$is_refresh): ?>
 <?php include '../includes/header.php';?>
     <link rel="stylesheet" href="../assets/css/admin.css">
     <h1>Admin Dashboard</h1>
-    <section class="card status_strip">
-        <div class="strip_row">
-            <span>Mission: <strong class="status_safe">Active</strong></span>
-            <span>Network: <strong class="status_safe">Synced</strong></span>
-            <span>Role: <strong>Admin</strong></span>
-            <span id="refresh_note_admin">Refresh: waiting</span>
-        </div>
+    <section class="status_bar">
+        <div class="status_item">Mission <span class="status_badge status_safe">ACTIVE</span></div>
+        <div class="status_item">Network <span class="status_badge status_safe">SYNCED</span></div>
+        <div class="status_item">Role <span class="status_badge">ADMIN</span></div>
+        <div id="refresh_note_admin" class="status_item">Last refresh: waiting</div>
     </section>
     <div id="dashboard_content">
 <?php endif; ?>
 
-    <!-- control modules -->
-    <section class="dash_panel panel_grid">
-    <article class="card mod_admin_form">
-    <h2 class="card_head">Storm Management</h2>
-    <div class="card_body">
+    <section class="telemetry_grid">
+        <article class="panel">
+            <h2 class="panel_head">Storm Monitor</h2>
+            <div class="panel_body">
+                <?php if ($storm_row): ?>
+                    <div class="stat_row"><span>Current intensity</span><span id="admin_storm_intensity" class="stat_val"><?php echo (int) $storm_row['intensity']; ?></span></div>
+                    <?php
+                    $storm_status = 'status_safe';
+                    if ((int) $storm_row['intensity'] >= 8) {
+                        $storm_status = 'status_critical';
+                    } elseif ((int) $storm_row['intensity'] >= 5) {
+                        $storm_status = 'status_warn';
+                    }
+                    ?>
+                    <div class="stat_row"><span>Status</span><span id="admin_storm_status" class="status_badge <?php echo $storm_status; ?>"><?php echo $storm_status === 'status_critical' ? 'Critical' : ($storm_status === 'status_warn' ? 'Warn' : 'Safe'); ?></span></div>
+                    <div class="stat_row"><span>Last update</span><span id="admin_storm_time"><?php echo htmlspecialchars($storm_row['created_at']); ?></span></div>
+                <?php else: ?>
+                    <div class="stat_row"><span>Current intensity</span><span id="admin_storm_intensity" class="stat_val">N/A</span></div>
+                    <div class="stat_row"><span>Status</span><span id="admin_storm_status" class="status_badge status_warn">Warn</span></div>
+                    <div class="stat_row"><span>Last update</span><span id="admin_storm_time">N/A</span></div>
+                <?php endif; ?>
+                <div class="chart_box">
+                    <canvas id="admin_chart_storm"></canvas>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2 class="panel_head">Power System</h2>
+            <div class="panel_body">
+                <?php if ($pwr_row): ?>
+                    <div class="stat_row"><span>Solar output</span><span id="admin_power_solar" class="stat_val"><?php echo (int) $pwr_row['solar_output']; ?></span></div>
+                    <div class="stat_row"><span>Battery level</span><span id="admin_power_battery" class="stat_val"><?php echo (int) $pwr_row['battery_level']; ?>%</span></div>
+                    <div class="stat_row"><span>Status</span><span id="admin_power_mode" class="status_badge <?php echo status_cls($pwr_row['mode']); ?>"><?php echo $pwr_row['mode'] === 'critical' ? 'Critical' : 'Safe'; ?></span></div>
+                    <div class="stat_row"><span>Last update</span><span id="admin_power_time"><?php echo htmlspecialchars($pwr_row['created_at']); ?></span></div>
+                <?php else: ?>
+                    <div class="stat_row"><span>Solar output</span><span id="admin_power_solar" class="stat_val">N/A</span></div>
+                    <div class="stat_row"><span>Battery level</span><span id="admin_power_battery" class="stat_val">N/A</span></div>
+                    <div class="stat_row"><span>Status</span><span id="admin_power_mode" class="status_badge status_warn">Warn</span></div>
+                    <div class="stat_row"><span>Last update</span><span id="admin_power_time">N/A</span></div>
+                <?php endif; ?>
+                <div class="chart_box">
+                    <canvas id="admin_chart_power"></canvas>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2 class="panel_head">Radiation Monitor</h2>
+            <div class="panel_body">
+                <?php if ($rad_row): ?>
+                    <div class="stat_row"><span>Current level</span><span id="admin_rad_level" class="stat_val"><?php echo number_format((float) $rad_row['radiation_level'], 2); ?></span></div>
+                    <div class="stat_row"><span>Status</span><span id="admin_rad_status" class="status_badge <?php echo status_cls($rad_row['status']); ?>"><?php echo $rad_row['status'] === 'danger' ? 'Critical' : ucfirst($rad_row['status']); ?></span></div>
+                    <div class="stat_row"><span>Last update</span><span id="admin_rad_time"><?php echo htmlspecialchars($rad_row['created_at']); ?></span></div>
+                <?php else: ?>
+                    <div class="stat_row"><span>Current level</span><span id="admin_rad_level" class="stat_val">N/A</span></div>
+                    <div class="stat_row"><span>Status</span><span id="admin_rad_status" class="status_badge status_warn">Warn</span></div>
+                    <div class="stat_row"><span>Last update</span><span id="admin_rad_time">N/A</span></div>
+                <?php endif; ?>
+                <div class="chart_box">
+                    <canvas id="admin_chart_radiation"></canvas>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2 class="panel_head">System Health</h2>
+            <div class="panel_body">
+                <?php
+                $health = 100;
+                if ($rad_row) {
+                    if ($rad_row['status'] === 'danger') {
+                        $health -= 30;
+                    } elseif ($rad_row['status'] === 'warning') {
+                        $health -= 15;
+                    }
+                }
+                if ($pwr_row) {
+                    if ($pwr_row['mode'] === 'critical') {
+                        $health -= 25;
+                    }
+                    if ((float) $pwr_row['battery_level'] < 40) {
+                        $health -= 15;
+                    }
+                    if ((float) $pwr_row['battery_level'] < 20) {
+                        $health -= 10;
+                    }
+                }
+                $health = max(0, $health);
+                $health_status = $health >= 80 ? 'status_safe' : ($health >= 50 ? 'status_warn' : 'status_critical');
+                $health_label = $health >= 80 ? 'SAFE' : ($health >= 50 ? 'WARN' : 'CRITICAL');
+                ?>
+                <div class="stat_row"><span>Healthy ratio</span><span id="admin_health_value" class="stat_val"><?php echo $health; ?>%</span></div>
+                <div class="stat_row"><span>Status</span><span id="admin_health_status" class="status_badge <?php echo $health_status; ?>"><?php echo ucfirst(strtolower($health_label)); ?></span></div>
+                <div class="stat_row"><span>Last update</span><span id="admin_health_time"><?php echo date('Y-m-d H:i:s'); ?></span></div>
+                <div class="chart_box doughnut_box">
+                    <canvas id="admin_chart_health"></canvas>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="telemetry_secondary">
+        <article class="panel">
+            <h2 class="panel_head">Power History</h2>
+            <div class="panel_body">
+                <div class="chart_box wide_chart">
+                    <canvas id="admin_chart_power_history"></canvas>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2 class="panel_head">Recent Events</h2>
+            <div class="panel_body">
+                <?php if (count($event_log) > 0): ?>
+                    <table class="telemetry_table">
+                        <tr>
+                            <th>Time</th>
+                            <th>Event</th>
+                            <th>Severity</th>
+                        </tr>
+                        <?php foreach ($event_log as $event): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($event['created_at']); ?></td>
+                                <td><?php echo htmlspecialchars($event['event_type']); ?></td>
+                                <td><span class="status_badge <?php echo event_severity_cls($event['event_type'], $event['notes']); ?>"><?php echo event_severity_label($event['event_type'], $event['notes']); ?></span></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php else: ?>
+                    <p>No events logged.</p>
+                <?php endif; ?>
+            </div>
+        </article>
+    </section>
+
+    <section class="admin_tools">
+    <article class="panel mod_admin_form">
+    <h2 class="panel_head">Storm Management</h2>
+    <div class="panel_body">
     <form method="POST" class="admin_form">
         <input type="hidden" name="action" value="<?php echo $edit_row ? 'update' : 'create'; ?>">
         <?php if ($edit_row): ?>
@@ -273,9 +461,9 @@ $storm_rows = db_fetch_all($conn, $row_sql, $row_types, $row_params);
     </div>
     </article>
 
-    <article class="card mod_admin_logs">
-    <h2 class="card_head">Storm Log</h2>
-    <div class="card_body">
+    <article class="panel mod_admin_logs">
+    <h2 class="panel_head">Storm Log</h2>
+    <div class="panel_body">
 
     <form method="GET" class="filter_form">
         <label for="filter_lvl">Storm intensity</label>
@@ -355,6 +543,8 @@ $storm_rows = db_fetch_all($conn, $row_sql, $row_types, $row_params);
 
 <?php if (!$is_refresh): ?>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/js/admin_charts.js"></script>
     <script src="../assets/js/auto_refresh.js"></script>
     <script src="../assets/js/admin.js"></script>
 <?php include '../includes/footer.php';?>

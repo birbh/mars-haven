@@ -3,65 +3,203 @@ const astro_chart_store = {
     radiation: null,
     power: null,
     health: null,
+    power_history: null,
 };
 
-function set_text(id, value) {
+const telemetry_palette = {
+    primary_blue: '#4da3ff',
+    warning_orange: '#f59e0b',
+    danger_red: '#ef4444',
+    safe_green: '#22c55e',
+    border: '#2a3442',
+    grid: 'rgba(42, 52, 66, 0.45)',
+    text: '#9eabb9',
+};
+
+const astro_alert_state = {
+    storm: false,
+    radiation: false,
+    power: false,
+    health: false,
+};
+
+const astro_emergency_state = {
+    acknowledged: false,
+    secondsRemaining: 15,
+    timerId: null,
+    wasCritical: false,
+};
+
+function astro_sync_siren_state() {
+    if (!window.MarsSound || typeof window.MarsSound.setSirenActive !== 'function') {
+        astro_sync_emergency_banner(false);
+        return;
+    }
+
+    const any_critical = astro_alert_state.storm || astro_alert_state.radiation || astro_alert_state.power || astro_alert_state.health;
+    window.MarsSound.setSirenActive(any_critical);
+    astro_sync_emergency_banner(any_critical);
+}
+
+function astro_sync_emergency_banner(active) {
+    const alert_el = document.getElementById('astro_emergency_alert');
+    if (!alert_el) {
+        return;
+    }
+
+    if (active && !astro_emergency_state.wasCritical) {
+        astro_emergency_state.acknowledged = false;
+        astro_emergency_state.secondsRemaining = 15;
+    }
+
+    astro_emergency_state.wasCritical = active;
+
+    if (active) {
+        alert_el.classList.add('is_active');
+        astro_start_emergency_countdown();
+    } else {
+        alert_el.classList.remove('is_active');
+        alert_el.classList.remove('is_acknowledged');
+        astro_stop_emergency_countdown();
+        astro_emergency_state.acknowledged = false;
+        astro_emergency_state.secondsRemaining = 15;
+        astro_render_emergency_meta();
+    }
+
+    if (active) {
+        if (astro_emergency_state.acknowledged) {
+            alert_el.classList.add('is_acknowledged');
+        } else {
+            alert_el.classList.remove('is_acknowledged');
+        }
+        astro_render_emergency_meta();
+    }
+}
+
+function astro_render_emergency_meta() {
+    const countdown_el = document.getElementById('astro_emergency_countdown');
+    const ack_btn = document.getElementById('astro_alert_ack');
+
+    if (countdown_el) {
+        countdown_el.textContent = String(Math.max(0, astro_emergency_state.secondsRemaining)) + 's';
+    }
+
+    if (ack_btn) {
+        ack_btn.textContent = astro_emergency_state.acknowledged ? 'Acknowledged' : 'Acknowledge';
+    }
+}
+
+function astro_start_emergency_countdown() {
+    if (astro_emergency_state.timerId !== null) {
+        return;
+    }
+
+    astro_emergency_state.timerId = window.setInterval(function () {
+        if (astro_emergency_state.acknowledged) {
+            return;
+        }
+
+        if (astro_emergency_state.secondsRemaining > 0) {
+            astro_emergency_state.secondsRemaining -= 1;
+            astro_render_emergency_meta();
+        }
+    }, 1000);
+}
+
+function astro_stop_emergency_countdown() {
+    if (astro_emergency_state.timerId !== null) {
+        window.clearInterval(astro_emergency_state.timerId);
+        astro_emergency_state.timerId = null;
+    }
+}
+
+function astro_init_emergency_ack() {
+    const ack_btn = document.getElementById('astro_alert_ack');
+    if (!ack_btn || ack_btn.dataset.bound === '1') {
+        return;
+    }
+
+    ack_btn.dataset.bound = '1';
+    ack_btn.addEventListener('click', function () {
+        astro_emergency_state.acknowledged = true;
+        astro_render_emergency_meta();
+
+        const alert_el = document.getElementById('astro_emergency_alert');
+        if (alert_el) {
+            alert_el.classList.add('is_acknowledged');
+        }
+    });
+}
+
+function astro_set_text(id, value) {
     const el = document.getElementById(id);
     if (el) {
         el.textContent = value;
     }
 }
 
-function set_status_note(id, status, safe_msg, warn_msg, danger_msg) {
+function astro_set_badge(id, status) {
     const el = document.getElementById(id);
     if (!el) {
         return;
     }
 
-    if (status === 'danger' || status === 'critical') {
-        el.className = 'status_danger';
-        el.textContent = danger_msg;
+    el.classList.remove('status_safe', 'status_warn', 'status_critical');
+
+    if (status === 'critical') {
+        el.classList.add('status_critical');
+        el.textContent = 'Critical';
         return;
     }
 
-    if (status === 'warning') {
-        el.className = 'status_warn';
-        el.textContent = warn_msg;
+    if (status === 'warn') {
+        el.classList.add('status_warn');
+        el.textContent = 'Warn';
         return;
     }
 
-    el.className = 'status_safe';
-    el.textContent = safe_msg;
+    el.classList.add('status_safe');
+    el.textContent = 'Safe';
 }
 
-function build_chart_config() {
+function astro_line_or_bar_options() {
     return {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-            duration: 350,
-        },
+        animation: { duration: 240 },
         plugins: {
             legend: {
-                labels: {
-                    color: '#9eabb9',
-                },
+                labels: { color: telemetry_palette.text },
             },
         },
         scales: {
             x: {
-                ticks: { color: '#9eabb9' },
-                grid: { color: '#2a3442' },
+                ticks: { color: telemetry_palette.text },
+                grid: { color: telemetry_palette.grid, lineWidth: 1 },
             },
             y: {
-                ticks: { color: '#9eabb9' },
-                grid: { color: '#2a3442' },
+                beginAtZero: true,
+                ticks: { color: telemetry_palette.text },
+                grid: { color: telemetry_palette.grid, lineWidth: 1 },
             },
         },
     };
 }
 
-function render_or_replace(chart_key, canvas_id, type, data, options) {
+function astro_doughnut_options() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 240 },
+        plugins: {
+            legend: {
+                labels: { color: telemetry_palette.text },
+            },
+        },
+    };
+}
+
+function astro_render_or_replace(chart_key, canvas_id, type, data, options) {
     const canvas = document.getElementById(canvas_id);
     if (!canvas || typeof Chart === 'undefined') {
         return;
@@ -76,26 +214,41 @@ function render_or_replace(chart_key, canvas_id, type, data, options) {
         return;
     }
 
-    const ctx = canvas.getContext('2d');
-    astro_chart_store[chart_key] = new Chart(ctx, {
+    astro_chart_store[chart_key] = new Chart(canvas.getContext('2d'), {
         type: type,
         data: data,
         options: options,
     });
 }
 
-function load_storm_chart() {
+function astro_load_storm_chart() {
     return fetch('../api/storm_data.php')
         .then((res) => res.json())
         .then((payload) => {
             if (payload.latest) {
-                set_text('astro_storm_intensity', String(payload.latest.intensity ?? 'N/A'));
-                set_text('astro_storm_time', payload.latest.created_at || 'N/A');
+                const intensity = Number(payload.latest.intensity || 0);
+                astro_set_text('astro_storm_intensity', String(intensity));
+                astro_set_text('astro_storm_time', payload.latest.created_at || 'N/A');
+
+                if (intensity >= 8) {
+                    astro_set_badge('astro_storm_status', 'critical');
+                    astro_alert_state.storm = true;
+                } else if (intensity >= 5) {
+                    astro_set_badge('astro_storm_status', 'warn');
+                    astro_alert_state.storm = false;
+                } else {
+                    astro_set_badge('astro_storm_status', 'safe');
+                    astro_alert_state.storm = false;
+                }
+            } else {
+                astro_alert_state.storm = false;
             }
 
-            render_or_replace(
+            astro_sync_siren_state();
+
+            astro_render_or_replace(
                 'storm',
-                'chart_storm',
+                'astro_chart_storm',
                 'line',
                 {
                     labels: payload.labels || [],
@@ -103,40 +256,49 @@ function load_storm_chart() {
                         {
                             label: 'Storm intensity',
                             data: payload.values || [],
-                            borderColor: '#f5a93b',
-                            backgroundColor: 'rgba(245, 169, 59, 0.12)',
-                            tension: 0.25,
+                            borderColor: telemetry_palette.warning_orange,
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.2,
                             fill: true,
+                            borderWidth: 2,
                         },
                     ],
                 },
-                build_chart_config()
+                astro_line_or_bar_options()
             );
         });
 }
 
-function load_radiation_chart() {
+function astro_load_radiation_chart() {
     return fetch('../api/radiation_data.php')
         .then((res) => res.json())
         .then((payload) => {
             if (payload.latest) {
+                const level = Number(payload.latest.radiation_level || 0);
                 const status = String(payload.latest.status || 'safe');
-                set_text('astro_rad_level', String(payload.latest.radiation_level ?? 'N/A'));
-                set_text('astro_rad_status', status);
-                set_text('astro_rad_time', payload.latest.created_at || 'N/A');
 
-                set_status_note(
-                    'astro_rad_note',
-                    status,
-                    'Radiation within safe limits.',
-                    'Radiation elevated. Limit external activity.',
-                    'Radiation levels are dangerous. Proceed to shelter immediately.'
-                );
+                astro_set_text('astro_rad_level', level.toFixed(2));
+                astro_set_text('astro_rad_time', payload.latest.created_at || 'N/A');
+
+                if (status === 'danger' || status === 'critical') {
+                    astro_set_badge('astro_rad_status', 'critical');
+                    astro_alert_state.radiation = true;
+                } else if (status === 'warning') {
+                    astro_set_badge('astro_rad_status', 'warn');
+                    astro_alert_state.radiation = false;
+                } else {
+                    astro_set_badge('astro_rad_status', 'safe');
+                    astro_alert_state.radiation = false;
+                }
+            } else {
+                astro_alert_state.radiation = false;
             }
 
-            render_or_replace(
+            astro_sync_siren_state();
+
+            astro_render_or_replace(
                 'radiation',
-                'chart_radiation',
+                'astro_chart_radiation',
                 'line',
                 {
                     labels: payload.labels || [],
@@ -144,125 +306,148 @@ function load_radiation_chart() {
                         {
                             label: 'Radiation level',
                             data: payload.values || [],
-                            borderColor: '#ff5a66',
-                            backgroundColor: 'rgba(255, 90, 102, 0.1)',
-                            tension: 0.25,
+                            borderColor: telemetry_palette.danger_red,
+                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                            tension: 0.2,
                             fill: true,
+                            borderWidth: 2,
                         },
                     ],
                 },
-                build_chart_config()
+                astro_line_or_bar_options()
             );
         });
 }
 
-function load_power_chart() {
+function astro_load_power_charts() {
     return fetch('../api/power_data.php')
         .then((res) => res.json())
         .then((payload) => {
-            render_or_replace(
+            const latest = payload.latest || null;
+            const backup_value = latest && latest.mode === 'critical' ? 100 : 0;
+
+            if (latest) {
+                astro_set_text('astro_power_solar', String(latest.solar_output ?? 'N/A'));
+                astro_set_text('astro_power_battery', String(latest.battery_level ?? 'N/A') + '%');
+                astro_set_text('astro_power_time', latest.created_at || 'N/A');
+                astro_set_badge('astro_power_status', latest.mode === 'critical' ? 'critical' : 'safe');
+                astro_alert_state.power = latest.mode === 'critical' || Number(latest.battery_level || 0) < 20;
+            } else {
+                astro_alert_state.power = false;
+            }
+
+            astro_sync_siren_state();
+
+            astro_render_or_replace(
                 'power',
-                'chart_power',
+                'astro_chart_power',
                 'bar',
+                {
+                    labels: ['Solar Output', 'Battery Level', 'Backup Status'],
+                    datasets: [
+                        {
+                            label: 'Current values',
+                            data: latest
+                                ? [
+                                      Number(latest.solar_output || 0),
+                                      Number(latest.battery_level || 0),
+                                      backup_value,
+                                  ]
+                                : [0, 0, 0],
+                            backgroundColor: [
+                                telemetry_palette.primary_blue,
+                                telemetry_palette.safe_green,
+                                telemetry_palette.warning_orange,
+                            ],
+                            borderColor: telemetry_palette.border,
+                            borderWidth: 1,
+                        },
+                    ],
+                },
+                astro_line_or_bar_options()
+            );
+
+            astro_render_or_replace(
+                'power_history',
+                'astro_chart_power_history',
+                'line',
                 {
                     labels: payload.labels || [],
                     datasets: [
                         {
                             label: 'Solar output',
                             data: payload.solar_output || [],
-                            backgroundColor: '#4da3ff',
+                            borderColor: telemetry_palette.primary_blue,
+                            backgroundColor: 'rgba(77, 163, 255, 0.08)',
+                            fill: false,
+                            tension: 0.2,
+                            borderWidth: 2,
                         },
                         {
                             label: 'Battery level',
                             data: payload.battery_level || [],
-                            backgroundColor: '#57d783',
-                        },
-                        {
-                            label: 'Backup status',
-                            data: payload.backup_status || [],
-                            backgroundColor: '#f5a93b',
+                            borderColor: telemetry_palette.safe_green,
+                            backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                            fill: false,
+                            tension: 0.2,
+                            borderWidth: 2,
                         },
                     ],
                 },
-                build_chart_config()
+                astro_line_or_bar_options()
             );
         });
 }
 
-function load_health_chart() {
+function astro_load_health_chart() {
     return fetch('../api/health_data.php')
         .then((res) => res.json())
         .then((payload) => {
             const health = Math.max(0, Math.min(100, Number(payload.health || 0)));
+            astro_set_text('astro_health_value', String(health) + '%');
+            astro_set_text('astro_health_time', new Date().toLocaleTimeString());
 
-            set_text('astro_health_value', String(health));
-            set_text('astro_avg_rad', payload.avg_radiation !== null ? Number(payload.avg_radiation).toFixed(2) : 'N/A');
-            set_text('astro_avg_battery', payload.avg_battery !== null ? Number(payload.avg_battery).toFixed(2) + '%' : 'N/A');
-            set_text('astro_events_24h', String(payload.events_24h ?? 0));
-
-            const fill_el = document.getElementById('astro_health_fill');
-            if (fill_el) {
-                fill_el.style.width = health + '%';
-                if (health >= 80) {
-                    fill_el.style.backgroundColor = 'green';
-                } else if (health >= 50) {
-                    fill_el.style.backgroundColor = 'orange';
-                } else {
-                    fill_el.style.backgroundColor = 'red';
-                }
+            if (health >= 80) {
+                astro_set_badge('astro_health_status', 'safe');
+                astro_alert_state.health = false;
+            } else if (health >= 50) {
+                astro_set_badge('astro_health_status', 'warn');
+                astro_alert_state.health = false;
+            } else {
+                astro_set_badge('astro_health_status', 'critical');
+                astro_alert_state.health = true;
             }
 
-            const health_note = document.getElementById('astro_health_note');
-            if (health_note) {
-                if (health >= 80) {
-                    health_note.className = 'status_safe';
-                    health_note.textContent = 'Habitat system operating in optimal range.';
-                } else if (health >= 50) {
-                    health_note.className = 'status_warn';
-                    health_note.textContent = 'System under moderate stress. Monitor closely.';
-                } else {
-                    health_note.className = 'status_danger pulse_danger';
-                    health_note.textContent = 'Habitat system health is critical. Immediate action required.';
-                }
-            }
+            astro_sync_siren_state();
 
-            render_or_replace(
+            astro_render_or_replace(
                 'health',
-                'chart_health',
+                'astro_chart_health',
                 'doughnut',
                 {
                     labels: ['Healthy', 'Risk'],
                     datasets: [
                         {
                             data: [health, 100 - health],
-                            backgroundColor: ['#57d783', '#2a3442'],
-                            borderColor: ['#57d783', '#2a3442'],
+                            backgroundColor: [telemetry_palette.safe_green, telemetry_palette.danger_red],
+                            borderColor: telemetry_palette.border,
+                            borderWidth: 1,
                         },
                     ],
                 },
-                {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 350 },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#9eabb9',
-                            },
-                        },
-                    },
-                }
+                astro_doughnut_options()
             );
         });
 }
 
 function load_astro_charts() {
+    astro_init_emergency_ack();
     Promise.all([
-        load_storm_chart(),
-        load_radiation_chart(),
-        load_power_chart(),
-        load_health_chart(),
+        astro_load_storm_chart(),
+        astro_load_radiation_chart(),
+        astro_load_power_charts(),
+        astro_load_health_chart(),
     ]).catch((err) => {
-        console.log('Chart load failed:', err);
+        console.log('Astronaut chart load failed:', err);
     });
 }

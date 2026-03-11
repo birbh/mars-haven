@@ -62,6 +62,23 @@ body {
 .header_body {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.sound_toggle {
+    background: #111923;
+    border: 1px solid var(--line);
+    color: var(--text_dim);
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+
+.sound_toggle:hover {
+    border-color: var(--accent);
+    color: var(--text);
 }
 
 .access_btn {

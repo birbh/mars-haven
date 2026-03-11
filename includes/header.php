@@ -12,6 +12,7 @@ $title = $title ?? 'Mars Haven Control';
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($title); ?></title>
     <link rel="stylesheet" href="../assets/css/all.css">
+    <script src="../assets/js/sound_system.js" defer></script>
 </head>
 <body>
     <nav class="navtop">
@@ -23,15 +24,9 @@ $title = $title ?? 'Mars Haven Control';
         <span class="user-info"><?php echo htmlspecialchars($_SESSION['username']); ?>
     (<?php echo htmlspecialchars($_SESSION['role']); ?>)</span>
     <?php endif; ?>
-    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'astronaut'): ?>
-        <a href="../dashboard/astronaut.php">Dashboard</a>
-    <?php endif; ?>
-    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'user'): ?>
-        <a href="../dashboard/user.php">Dashboard</a>
-    <?php endif; ?>
-    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-        <a href="../dashboard/admin.php">Dashboard</a>
-    <?php endif; ?>
+    <a href="../index.php?console=1">Console</a>
+
+    <button type="button" id="sound_toggle" class="sound_toggle" aria-pressed="false">Sound: On</button>
 
     <?php if (isset($_SESSION['user_id'])): ?>
         <a href="../logout.php" class="navout">Logout</a>

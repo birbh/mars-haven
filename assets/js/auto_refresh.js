@@ -13,7 +13,8 @@ function start_auto_ref(config) {
         }
 
         note_el.textContent = msg;
-        note_el.className = css_class;
+        note_el.classList.remove('status_safe', 'status_warn', 'status_critical');
+        note_el.classList.add(css_class);
     }
 
     function run_refresh() {
@@ -38,11 +39,11 @@ function start_auto_ref(config) {
                 }
 
                 const now = new Date();
-                set_ref_note('ref_ok: ' + now.toLocaleTimeString(), 'status_safe');
+                set_ref_note('Last refresh: ' + now.toLocaleTimeString(), 'status_safe');
             })
             .catch((err) => {
                 console.log('Refresh failed:', err);
-                set_ref_note('ref_err: retrying', 'status_warn');
+                set_ref_note('Refresh delayed: retrying', 'status_warn');
             });
     }
 

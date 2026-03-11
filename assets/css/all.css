@@ -8,9 +8,9 @@
     --text_main: #d6dde6;
     --text_dim: #9eabb9;
     --accent: #4da3ff;
-    --safe: #57d783;
-    --warning: #f5a93b;
-    --danger: #ff5a66;
+    --safe: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
 }
 
 * {
@@ -59,6 +59,21 @@ body {
     transition: color 0.2s ease, border-color 0.2s ease;
 }
 
+.sound_toggle {
+    background: #111923;
+    border: 1px solid var(--line);
+    color: var(--text_dim);
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+
+.sound_toggle:hover {
+    border-color: var(--accent);
+    color: var(--text_main);
+}
+
 .navright a:hover {
     color: var(--accent);
     border-color: var(--accent);
@@ -103,6 +118,33 @@ h3 {
     margin-bottom: 10px;
 }
 
+.status_bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.status_item {
+    background: var(--panel_bg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: var(--text_dim);
+    font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.status_badge {
+    color: var(--text_main);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
 .strip_row {
     display: flex;
     gap: 14px;
@@ -126,6 +168,86 @@ h3 {
     border-left: 1px solid var(--line_soft);
     padding: 10px;
     animation: panel_in 0.45s ease both;
+}
+
+.panel {
+    background: var(--panel_bg);
+    border: 1px solid #2a3442;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.panel_head {
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    color: var(--text_dim);
+    letter-spacing: 0.03em;
+}
+
+.panel_body {
+    font-size: 0.85rem;
+    color: var(--text_main);
+}
+
+.telemetry_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.telemetry_secondary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.stat_row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #202a37;
+}
+
+.stat_row:last-of-type {
+    border-bottom: 0;
+}
+
+.stat_val {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.chart_box {
+    width: 100%;
+    height: 210px;
+    margin-top: 10px;
+    border: 1px solid #2a3442;
+    border-radius: 4px;
+    background: #111923;
+    padding: 8px;
+}
+
+.doughnut_box {
+    height: 220px;
+}
+
+.wide_chart {
+    height: 260px;
+}
+
+.chart_box canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+.telemetry_table td,
+.telemetry_table th {
+    text-align: left;
 }
 
 .card_head {
@@ -213,6 +335,24 @@ tr:nth-child(even) {
     font-weight: 700;
 }
 
+.status_critical {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.status_badge.status_safe {
+    color: #22c55e;
+}
+
+.status_badge.status_warn {
+    color: #f59e0b;
+}
+
+.status_badge.status_critical,
+.status_badge.status_danger {
+    color: #ef4444;
+}
+
 .health_bar,
 .healbar {
     width: 100%;
@@ -263,6 +403,12 @@ textarea {
     animation: pulse_alert 1.8s ease-in-out infinite;
 }
 
+.admin_tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
 .success {
     color: var(--safe);
     margin: 5px 0;
@@ -301,6 +447,23 @@ textarea {
 }
 
 @media (max-width: 900px) {
+    .status_bar,
+    .telemetry_grid,
+    .telemetry_secondary,
+    .admin_tools {
+        grid-template-columns: 1fr;
+    }
+
+    .status_item {
+        font-size: 0.76rem;
+    }
+
+    .chart_box,
+    .wide_chart,
+    .doughnut_box {
+        height: 190px;
+    }
+
     .panel_grid {
         grid-template-columns: repeat(1, minmax(0, 1fr));
     }
