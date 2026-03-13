@@ -111,6 +111,41 @@ if ($health < 40) {
     );
 }
 ?>
+<<<<<<< HEAD
+=======
+<?php if(!$isRefresh): ?>
+<?php include '../includes/header.php';?>
+    <link rel="stylesheet" href="../assets/css/astro.css">
+    <h1>Astronaut Dashboard</h1>
+    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
+    
+    <div id="dashboard-content">
+    <?php endif; ?>
+    <?php
+    // radiation data
+        $radlog="SELECT * FROM radiation_logs ORDER BY created_at DESC LIMIT 1";
+        $result=$conn->query($radlog);
+        if($result->num_rows>0){
+            $data=$result->fetch_assoc();
+            $radiationstat=$data['status'];
+            echo "<div class='card'>";
+            echo"<h2>Radiation Monitoring:</h2>";
+            echo "<p><strong>Radiation Level:</strong> ".$data['radiation_level']."</p>";
+            echo "<p><strong>Status:</strong> ".$data['status']."</p>";
+            echo "<p><strong>Recorded time:</strong> ".$data['created_at']."</p>";
+            if($radiationstat==="danger"){
+                echo "<p class='status-danger'>Radiation levels are dangerous. Proceed to shelter immediately.</p>";            }
+            elseif($radiationstat==="warning"){
+                echo "<p class='status-warning'>Radiation elevated. Limit external activity.</p>";            }
+            else{
+                echo "<p class='status-safe'>Radiation within safe limits.</p>";
+            }
+            echo "</div>";
+        }
+        else{
+            echo "<p>No radiation data yet....</p>";
+        }
+>>>>>>> parent of 8463020 ( remove redundant styles and buttons)
 
 <?php if (!$is_refresh): ?>
 <?php include '../includes/header.php'; ?>

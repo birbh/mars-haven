@@ -12,7 +12,7 @@ Shows live  update for astronauts and users through  dashboard refresh(used js).
 Tracks emergency events when limits are crossed.
 Shows the important datas in charts(used from::: https://www.chartjs.org).
 
-also to improve exp. i have included sound effects (exploreee!!! and find)(hint:siren->high intensity)
+also to improve exp. i have included sound effects (exploreee!!! and find)(hint:🚨->high intensity)
 
 ## Roles and dashboards
 ### Admin
@@ -64,7 +64,7 @@ Username: `user`
 Email: `user@marshaven.local`
 Password: `user123`
 
-- These are demo info.. for testing use only.
+>These are demo info.. for testing use only.
 
 ## note
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
 :root {
@@ -477,3 +478,5 @@ textarea {
         width: calc(100% - 18px);
     }
 }
+=======
+>>>>>>> parent of 8463020 ( remove redundant styles and buttons)

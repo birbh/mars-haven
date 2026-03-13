@@ -15,7 +15,27 @@ if ($role !== 'admin') {
     exit();
 }
 
+<<<<<<< HEAD
 $is_refresh = isset($_GET['refresh']);
+=======
+<?php include '../includes/header.php';?>
+    <link rel="stylesheet" href="../assets/css/admin.css">
+    <h1>Admin Dashboard</h1>
+    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
+    <h2>Log the Solar storm data</h2>
+    <div class="card">
+    <form method="POST">
+        <label>Storm Intensity(1-10):</label>
+        <input type="number" name="intensityy" min="1" max="10" required><br><br>
+        <label>Storm Description:</label><br>
+        <textarea name="desc" placeholder="Describe storm(optional)....."></textarea><br><br>
+        <input type="submit" name="submit" value="Log the data">
+</form>
+</div>
+    <hr>
+    <div class="card">
+    <h2>Recently Logged Data</h2>
+>>>>>>> parent of 8463020 ( remove redundant styles and buttons)
 
 function admin_url($params = [])
 {
