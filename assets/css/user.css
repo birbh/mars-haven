@@ -1,52 +1,80 @@
-#refresh_note {
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #1a0f05;
+    color: #ffe8cc;
     margin: 0;
+    padding: 20px;
 }
 
-.user_summary_grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 10px;
+h1{
+    margin-bottom: 5px;
+    color: #ff8c00;
 }
 
-.user_activity_section {
-    margin-bottom: 10px;
+a{
+    color: #ffa94d;
+    text-decoration: none;
 }
 
-.user_small_chart {
-    height: 170px;
+.card{
+    background-color: #2b1608;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0 0 15px rgba(255,140,0,0.3);
+    border: 1px solid #ff8c00;
 }
 
-.events_list {
-    list-style: none;
-    display: grid;
-    gap: 8px;
+
+
+.status-safe{
+    color: #70cb38;
 }
 
-.events_list li {
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 8px;
-    display: grid;
-    gap: 4px;
+.status-warning{
+    color: #ffa94d;
+    font-weight: bold;
 }
 
-.events_time {
-    color: var(--text_dim);
-    font-size: 0.75rem;
+.status-danger{
+    color: #ff4d4d;
+    font-weight: bold;
 }
 
-.events_text {
-    color: var(--text_main);
-    font-size: 0.84rem;
+.healbar{
+    height: 20px;
+    background: #2f2c2c;
+    border-radius: 50px;
+    overflow: hidden;
 }
 
-@media (max-width: 900px) {
-    .user_summary_grid {
-        grid-template-columns: 1fr;
-    }
+.healfill{
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}
 
-    .user_small_chart {
-        height: 150px;
-    }
+.logoutbut{
+    background-color: #ff8c00;
+    color: #1a0f05;
+    border-color: rgb(0, 0, 0);
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    float: right;
+    font-weight: bold;
+    font-size: 18px;
+    position: absolute;
+    top: 30px;
+    right: 20px;
+
+}
+.logoutbut:hover{
+    background-color: #ecd0ae;
+    color: #1a0f05;
+    border-color: rgb(0, 0, 0);
+    padding: 10px 20px;
+    border-radius: 15px;
+    cursor: pointer;
+    float: right;
+    opacity: 0.8;
 }

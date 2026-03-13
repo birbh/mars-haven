@@ -1,55 +1,53 @@
-# Mars Haven system
+# Mars Haven
 
-Mars Haven is a role based PHP and MySQL web app that impreves monitoring a Mars habitat during diff. conditions.
+Mars Haven is a role based PHP and MySQL web app that simulates monitoring a Mars habitat during solar storm conditions.
 
-The project was built as a full-stack application project....
+The project was built as a full-stack application: simple architecture, clear dashboards, and realistic logging flows for storm, radiation, power, and emergency events.
 
 ## What it does???
 
-Lets admins log new solar storm events.
-Auto generates related radiation and power records from  intensity.
-Shows live  update for astronauts and users through  dashboard refresh(used js).
-Tracks emergency events when limits are crossed.
-Shows the important datas in charts(used from::: https://www.chartjs.org).
-
-also to improve exp. i have included sound effects (exploreee!!! and find)(hint:🚨->high intensity)
+- Lets admins log new solar storm events.
+- Auto-generates related radiation and power records from storm intensity.
+- Shows live  updates for astronauts and users through periodic dashboard refresh.
+- Tracks emergency events when thresholds are crossed.
 
 ## Roles and dashboards
+
 ### Admin
 - Logs storm intensity and description.
-- Triggers derived radiation status && power state 
+- Triggers derived radiation status 
+- Triggers power state 
 - Can see recently logged storm records.
 
 ### Astronaut
 - Sees latest radiation monitoring details.
 - Sees recent power system logs.
 - Gets system health output and warning messages.
-- Dashboard auto refreshes .
+- Dashboard auto refreshes every 7 seconds.
 
 ### User
-- Sees latest storm, radiation, and power snapshot.
-- Dashboard auto-refreshes .
+- Sees latest storm, radiation, and power snapshots.
+- Dashboard auto-refreshes every 15 seconds.
 
-## Tech used
+## Tech stack
 
 - Frontend: HTML, CSS, JavaScript
 - Backend: PHP 
 - Database: MySQL
-- Local environment: XAMPP or 
-visit: [This site](https://marshaven.byethost8.com)
+- Local environment: XAMPP or visit: [This site](https://marshaven.byethost8.com)
 
 
 ## How to run locally (XAMPP)
 
 1. Clone or copy this project into your XAMPP htdocs folder.
-2. Start XAMPP systems.
+2. Start Apache and MySQL from XAMPP.
 3. Open phpMyAdmin and import `database/schema.sql`.
-4. Confirm dbs connection in `config/db.php`.
-5. then open:::`http://localhost/mars-haven/login.php`
+4. Confirm DB connection in `config/db.php`.
+5. Open in browser:`http://localhost/mars-haven/login.php`
 
-## Demo login data(for demo only)
+## Demo login credentials
 
-You can log in using either username or mail .
+You can log in using either username or mail on the login page.
 
 - Admin
 Username: `admin`
@@ -64,8 +62,8 @@ Username: `user`
 Email: `user@marshaven.local`
 Password: `user123`
 
->These are demo info.. for testing use only.
+- These are demo credentials for project/testing use.
 
 ## note
 
-This project is built as a practical combining backend logic, database modeling, and rolebased ui behavior in a single app.
+This project is built as a practical full-stack learning exercise combining backend logic, database modeling, and role-based UI behavior in a single application.

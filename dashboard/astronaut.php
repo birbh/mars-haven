@@ -1,123 +1,16 @@
 <?php
-include '../includes/auth.php';
-include '../config/db.php';
-include '../lib/db_tools.php';
-
-$role = $_SESSION['role'] ?? '';
-if ($role !== 'astronaut') {
-    if ($role === 'admin') {
-        header('Location: admin.php');
-    } elseif ($role === 'user') {
-        header('Location: user.php');
-    } else {
-        header('Location: ../login.php');
+    include '../includes/auth.php';
+    include '../config/db.php';
+    if($_SESSION['role'] !== 'astronaut'){
+        die("Access denied.");
     }
-    exit();
-}
-
-$is_refresh = isset($_GET['refresh']);
-
-function status_cls($value)
-{
-    if ($value === 'danger' || $value === 'critical') {
-        return 'status_critical';
-    }
-
-    if ($value === 'warning') {
-        return 'status_warn';
-    }
-
-    return 'status_safe';
-}
-
-$latest_storm = db_fetch_one($conn, "SELECT * FROM solar_storms ORDER BY created_at DESC LIMIT 1");
-$latest_radiation = db_fetch_one($conn, "SELECT * FROM radiation_logs ORDER BY created_at DESC LIMIT 1");
-
-$latest_power = db_fetch_one(
-    $conn,
-    "SELECT p.*, s.intensity FROM power_logs p LEFT JOIN solar_storms s ON p.storm_id = s.id ORDER BY p.created_at DESC LIMIT 1"
-);
-
-$event_log = db_fetch_all(
-    $conn,
-    "SELECT event_type, notes, created_at FROM events ORDER BY created_at DESC LIMIT 10"
-);
-
-function event_severity_cls($event_type, $notes)
-{
-    $combined = strtolower($event_type . ' ' . $notes);
-
-    if (strpos($combined, 'critical') !== false || strpos($combined, 'emergency') !== false || strpos($combined, 'danger') !== false) {
-        return 'status_critical';
-    }
-
-    if (strpos($combined, 'warn') !== false || strpos($combined, 'elevated') !== false || strpos($combined, 'monitor') !== false) {
-        return 'status_warn';
-    }
-
-    return 'status_safe';
-}
-
-function event_severity_label($event_type, $notes)
-{
-    $cls = event_severity_cls($event_type, $notes);
-    if ($cls === 'status_critical') {
-        return 'Critical';
-    }
-    if ($cls === 'status_warn') {
-        return 'Warn';
-    }
-
-    return 'Safe';
-}
-
-$health = 100;
-if ($latest_radiation) {
-    if ($latest_radiation['status'] === 'danger') {
-        $health -= 30;
-    } elseif ($latest_radiation['status'] === 'warning') {
-        $health -= 15;
-    }
-}
-
-if ($latest_power) {
-    if ($latest_power['mode'] === 'critical') {
-        $health -= 25;
-    }
-
-    if ((float) $latest_power['battery_level'] < 40) {
-        $health -= 15;
-    }
-
-    if ((float) $latest_power['battery_level'] < 20) {
-        $health -= 10;
-    }
-
-    if (isset($latest_power['intensity']) && (int) $latest_power['intensity'] > 7) {
-        $health -= 15;
-    }
-}
-
-if ($health < 0) {
-    $health = 0;
-}
-
-if ($health < 40) {
-    db_insert_event_cooldown(
-        $conn,
-        'System-wide Critical Condition',
-        'Combined system health dropped below 40%. Immediate intervention required.',
-        5
-    );
-}
+    $isRefresh = isset($_GET['refresh']);
+    
 ?>
-<<<<<<< HEAD
-=======
 <?php if(!$isRefresh): ?>
 <?php include '../includes/header.php';?>
     <link rel="stylesheet" href="../assets/css/astro.css">
     <h1>Astronaut Dashboard</h1>
-    <button class="logoutbut" onclick="location.href='../logout.php'">Logout</button>
     
     <div id="dashboard-content">
     <?php endif; ?>
@@ -145,155 +38,224 @@ if ($health < 40) {
         else{
             echo "<p>No radiation data yet....</p>";
         }
->>>>>>> parent of 8463020 ( remove redundant styles and buttons)
 
-<?php if (!$is_refresh): ?>
-<?php include '../includes/header.php'; ?>
-<link rel="stylesheet" href="../assets/css/astro.css">
-<h1>Astronaut Dashboard</h1>
-<section class="status_bar">
-    <div class="status_item">Mission <span class="status_badge status_safe">ACTIVE</span></div>
-    <div class="status_item">Network <span class="status_badge status_safe">SYNCED</span></div>
-    <div class="status_item">Role <span class="status_badge">ASTRONAUT</span></div>
-    <div id="refresh_note_astro" class="status_item">Last refresh: waiting</div>
-</section>
-<section id="astro_emergency_alert" class="emergency_alert" aria-live="assertive" role="alert">
-    <div class="emergency_text">Emergency protocol active: move to shielded zone immediately.</div>
-    <div class="emergency_meta">
-        <span>Escalation countdown: <strong id="astro_emergency_countdown">15s</strong></span>
-        <button type="button" id="astro_alert_ack" class="emergency_ack">Acknowledge</button>
-    </div>
-</section>
-<div id="dashboard_content">
-<?php endif; ?>
+// power data
+        $pwrlog="SELECT p.*, s.intensity FROM power_logs p LEFT JOIN solar_storms s ON p.storm_id=s.id ORDER BY p.created_at DESC LIMIT 5";
+        $pwr=$conn->query($pwrlog);
+        if($pwr && $pwr->num_rows>0){
+            echo "<div class='card'>";
+            echo "<h2>Power Systems:</h2>";
+            echo "<table border='1' cellpadding=10>";
+            echo "<tr><th>Solar Output</th><th>Battery Level</th><th>Mode</th><th>Intensity</th><th>Recorded</th></tr>";
+            while($row=$pwr->fetch_assoc()){
+               echo "<tr><td>".$row['solar_output']."</td>
+            <td>".$row['battery_level']."</td>
+            <td> ".$row['mode']."</td>
+            <td>".$row['intensity']."</td>
+            <td>".$row['created_at']."</td>
+            </tr>";
+            }
+            echo "</table>";
+            $pwr->data_seek(0); 
+            $int=$pwr->fetch_assoc();
+            if($int['intensity'] >= 9){
+                echo "<p class='status-danger'>Extreme solar storm severely impacting power systems.</p>";
+            }
+            elseif($int['intensity'] >= 7){
+                echo "<p class='status-warning'>Strong storm reducing solar efficiency significantly.</p>";
+            }
+            elseif($int['intensity'] >= 4){
+                echo "<p class='status-warning'>Moderate storm affecting energy output.</p>";
+            }
+            else{
+                echo "<p class='status-safe'>Mild storm. Power systems stable.</p>";
+            }
+            
 
-<section class="telemetry_grid">
-    <article class="panel">
-        <h2 class="panel_head">Storm Monitor</h2>
-        <div class="panel_body">
-            <?php if ($latest_storm): ?>
-                <div class="stat_row"><span>Current intensity</span><span id="astro_storm_intensity" class="stat_val"><?php echo (int) $latest_storm['intensity']; ?></span></div>
-                <div class="stat_row"><span>Status</span>
-                    <?php
-                    $storm_status = 'status_safe';
-                    if ((int) $latest_storm['intensity'] >= 8) {
-                        $storm_status = 'status_critical';
-                    } elseif ((int) $latest_storm['intensity'] >= 5) {
-                        $storm_status = 'status_warn';
+            $latqrr = $conn->query("SELECT p.*, s.intensity FROM power_logs p LEFT JOIN solar_storms s ON p.storm_id=s.id ORDER BY p.created_at DESC LIMIT 2");
+            if ($latqrr && $latqrr->num_rows > 0) {
+                $power = $latqrr->fetch_assoc();
+                $prevpower = $latqrr->fetch_assoc();
+                $helth=100;
+                    //radiation imp 
+                    if(isset($radiationstat)){
+                        if($radiationstat==="danger"){
+                            $helth-=30;
+                        }
+                        elseif($radiationstat==="warning"){
+                            $helth-=15;
+                        }
                     }
-                    ?>
-                    <span id="astro_storm_status" class="status_badge <?php echo $storm_status; ?>"><?php echo $storm_status === 'status_critical' ? 'Critical' : ($storm_status === 'status_warn' ? 'Warn' : 'Safe'); ?></span>
-                </div>
-                <div class="stat_row"><span>Last update</span><span id="astro_storm_time"><?php echo htmlspecialchars($latest_storm['created_at']); ?></span></div>
-            <?php else: ?>
-                <div class="stat_row"><span>Current intensity</span><span id="astro_storm_intensity" class="stat_val">N/A</span></div>
-                <div class="stat_row"><span>Status</span><span id="astro_storm_status" class="status_badge status_warn">Warn</span></div>
-                <div class="stat_row"><span>Last update</span><span id="astro_storm_time">N/A</span></div>
-            <?php endif; ?>
-            <div class="chart_box">
-                <canvas id="astro_chart_storm"></canvas>
-            </div>
-        </div>
-    </article>
+                    //power imp
+                    if($power['mode']==='critical'){
+                        $helth-=25;
+                    }
+                    //battery imp
+                    if($power['battery_level'] < 40){
+                        $helth-=15;
+                    }
+                    if($power['battery_level'] < 20){
+                        $helth-=10;
+                    }
+                    //storm imp
+                    if(isset($power['intensity']) && $power['intensity'] > 7){
+                        $helth-=15;
+                    }
+                    //negative health 
+                    if($helth<0){
+                        $helth=0;
+                    }
+                    // aes
+                    if($helth<40){
+                        $chk=$conn->query("SELECT *  FROM events WHERE event_type='Emergency Shelter Activated' ORDER BY created_at DESC LIMIT 1");
+                        $insemer=true;
+                        if($chk &&  $chk->num_rows>0){
+                            $pevent=$chk->fetch_assoc();
+                            $ptime=strtotime($pevent['created_at']);
+                            $ctime=time();
+                            if(($ctime-$ptime)<300){
+                                $insemer=false;
+                            }
+                        }
+                        if($insemer){
+                            $conn->query("INSERT INTO events (event_type, notes)
+                            SELECT 'System-wide Critical Condition','Combined system health dropped below 40%. Immediate intervention required.'
+                            FROM dual
+                            WHERE NOT EXISTS (
+                                SELECT 1 FROM events 
+                                WHERE event_type='System-wide Critical Condition'
+                                AND created_at >= NOW() - INTERVAL 5 MINUTE
+                            )
+                            ");
+                        }
+                    }
 
-    <article class="panel">
-        <h2 class="panel_head">Power System</h2>
-        <div class="panel_body">
-            <?php if ($latest_power): ?>
-                <div class="stat_row"><span>Solar output</span><span id="astro_power_solar" class="stat_val"><?php echo (int) $latest_power['solar_output']; ?></span></div>
-                <div class="stat_row"><span>Battery level</span><span id="astro_power_battery" class="stat_val"><?php echo (int) $latest_power['battery_level']; ?>%</span></div>
-                <div class="stat_row"><span>Status</span><span id="astro_power_status" class="status_badge <?php echo status_cls($latest_power['mode']); ?>"><?php echo $latest_power['mode'] === 'critical' ? 'Critical' : 'Safe'; ?></span></div>
-                <div class="stat_row"><span>Last update</span><span id="astro_power_time"><?php echo htmlspecialchars($latest_power['created_at']); ?></span></div>
-            <?php else: ?>
-                <div class="stat_row"><span>Solar output</span><span id="astro_power_solar" class="stat_val">N/A</span></div>
-                <div class="stat_row"><span>Battery level</span><span id="astro_power_battery" class="stat_val">N/A</span></div>
-                <div class="stat_row"><span>Status</span><span id="astro_power_status" class="status_badge status_warn">Warn</span></div>
-                <div class="stat_row"><span>Last update</span><span id="astro_power_time">N/A</span></div>
-            <?php endif; ?>
-            <div class="chart_box">
-                <canvas id="astro_chart_power"></canvas>
-            </div>
-        </div>
-    </article>
+                echo "<div class='card'>
+                <h2>System Health:</h2>
+                <p>Overall system health : <strong>".$helth."%</strong>.</p>";
+                echo "<div class='healbar'>";
+                    if($helth>=80){
+                        $color="green";
+                    }
+                    elseif($helth>=50){
+                        $color="orange";
+                    }
+                    else{
+                        $color="red";
+                    }
+                echo "<div class='healfill' style='width:".$helth."%; background-color:".$color.";'></div>";
+                echo "</div>";
+                    if($helth>=80){
+                        echo "<p class='status-safe'>Habitat system operating in optimal range.</p>";
+                    }
+                    else if($helth>=50){
+                        echo "<p class='status-warning'>System under moderate stress.Monitor closely.</p>";
+                    }
+                    else{
+                        echo "<p class='status-danger'>Habitat system health is critical. Immediate action required.</p>";
+                    }
+                echo"</div>";
 
-    <article class="panel">
-        <h2 class="panel_head">Radiation Monitor</h2>
-        <div class="panel_body">
-            <?php if ($latest_radiation): ?>
-                <div class="stat_row"><span>Current level</span><span id="astro_rad_level" class="stat_val"><?php echo number_format((float) $latest_radiation['radiation_level'], 2); ?></span></div>
-                <div class="stat_row"><span>Status</span><span id="astro_rad_status" class="status_badge <?php echo status_cls($latest_radiation['status']); ?>"><?php echo $latest_radiation['status'] === 'danger' ? 'Critical' : ucfirst($latest_radiation['status']); ?></span></div>
-                <div class="stat_row"><span>Last update</span><span id="astro_rad_time"><?php echo htmlspecialchars($latest_radiation['created_at']); ?></span></div>
-            <?php else: ?>
-                <div class="stat_row"><span>Current level</span><span id="astro_rad_level" class="stat_val">N/A</span></div>
-                <div class="stat_row"><span>Status</span><span id="astro_rad_status" class="status_badge status_warn">Warn</span></div>
-                <div class="stat_row"><span>Last update</span><span id="astro_rad_time">N/A</span></div>
-            <?php endif; ?>
-            <div class="chart_box">
-                <canvas id="astro_chart_radiation"></canvas>
-            </div>
-        </div>
-    </article>
+                if($power['mode']==='critical'){
+                    echo "<p class='status-danger'>Power system critical.Conserve energy immediately.</p>";
+                    $emer=$conn->query("SELECT * FROM events ORDER BY created_at DESC LIMIT 1");
+                    if ($emer && $emer->num_rows>0) {
+                        $event=$emer->fetch_assoc();
+                        echo "<p class='status-danger'><strong>Emergency:</strong> ".$event['event_type']."<br>Notes: ".$event['notes']."</p>";
+                    }
+                }
+                if ($power['battery_level'] < 30) {
+                    echo "<p class='status-warning'>Battery reserves below 30%.</p>";
+                }
 
-    <article class="panel">
-        <h2 class="panel_head">System Health</h2>
-        <div class="panel_body">
-            <div class="stat_row"><span>Healthy ratio</span><span id="astro_health_value" class="stat_val"><?php echo $health; ?>%</span></div>
-            <div class="stat_row"><span>Status</span>
-                <?php
-                $health_status = $health >= 80 ? 'status_safe' : ($health >= 50 ? 'status_warn' : 'status_critical');
-                $health_label = $health >= 80 ? 'SAFE' : ($health >= 50 ? 'WARN' : 'CRITICAL');
-                ?>
-                <span id="astro_health_status" class="status_badge <?php echo $health_status; ?>"><?php echo ucfirst(strtolower($health_label)); ?></span>
-            </div>
-            <div class="stat_row"><span>Last update</span><span id="astro_health_time"><?php echo date('Y-m-d H:i:s'); ?></span></div>
-            <div class="chart_box doughnut_box">
-                <canvas id="astro_chart_health"></canvas>
-            </div>
-        </div>
-    </article>
-</section>
+                if ($power['battery_level'] < 15) {
+                    echo "<p class='status-danger'>Emergency battery depletion risk.</p>";
+                }
 
-<section class="telemetry_secondary">
-    <article class="panel">
-        <h2 class="panel_head">Power History</h2>
-        <div class="panel_body">
-            <div class="chart_box wide_chart">
-                <canvas id="astro_chart_power_history"></canvas>
-            </div>
-        </div>
-    </article>
+                echo "<div class='card'>
+                <h2>Battery Trend:</h2>";
+                if($prevpower){
+                    $diff=$power['battery_level']-$prevpower['battery_level'];
+                    if($diff<=-15){
+                        echo "<p class='status-warning'>Battery level declining rapidly.▼▼▼▼</p>";
+                    }
+                    elseif($diff<=-5){
+                        echo "<p class='status-warning'>Battery level declining.▼▼</p>";
+                    }
+                    elseif($diff>5){
+                        echo "<p class='status-safe'>Battery level improving.▲▲</p>";
+                    }
+                    elseif($diff<0){
+                        echo "<p class='status-warning'>Battery level declining.▼▼</p>";
+                    }
+                    else{
+                        echo "<p class='status-safe'>Battery level stable.→→</p>";
+                    }
+                }
+                echo "</div>";
 
-    <article class="panel">
-        <h2 class="panel_head">Recent Events</h2>
-        <div class="panel_body">
-            <?php if (count($event_log) > 0): ?>
-                <table class="events_table telemetry_table">
-                    <tr>
-                        <th>Time</th>
-                        <th>Event</th>
-                        <th>Severity</th>
-                    </tr>
-                    <?php foreach ($event_log as $event): ?>
-                        <?php $severity_class = event_severity_cls($event['event_type'], $event['notes']); ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($event['created_at']); ?></td>
-                            <td><?php echo htmlspecialchars($event['event_type']); ?></td>
-                            <td><span class="status_badge <?php echo $severity_class; ?>"><?php echo event_severity_label($event['event_type'], $event['notes']); ?></span></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </table>
-            <?php else: ?>
-                <p>No events logged.</p>
-            <?php endif; ?>
-        </div>
-    </article>
-</section>
-
-<?php if (!$is_refresh): ?>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="../assets/js/astro_charts.js"></script>
-<script src="../assets/js/auto_refresh.js"></script>
-<script src="../assets/js/astro.js"></script>
-<?php include '../includes/footer.php'; ?>
+                echo "<div class='card'>
+                <h2>Storm Forecast:</h2>";
+                    $pesc=$conn->query("SELECT intensity FROM solar_storms ORDER BY created_at DESC LIMIT 3");
+                    if ($pesc && $pesc->num_rows==3){
+                        $i1=$pesc->fetch_assoc();
+                        $i2=$pesc->fetch_assoc();
+                        $i3=$pesc->fetch_assoc();
+                        $i1=$i1['intensity'];
+                        $i2=$i2['intensity'];   
+                        $i3=$i3['intensity'];
+                        if($i1>=$i2 && $i1>=$i3){
+                            if($i1>=8){
+                                // echo "<p class='status-danger'>Prepare for severe impacts.</p>";
+                                $evntlog = $conn->query("SELECT * FROM events WHERE event_type='Storm Escalation Warning' ORDER BY created_at DESC LIMIT 1");
+                                if($evntlog && $evntlog->num_rows>0){
+                                    $pevent=$evntlog->fetch_assoc();
+                                    echo "<p class='status-danger'><strong>Recent Event:</strong> ".$pevent['event_type']."<br>Notes: ".$pevent['notes']."</p>";
+                                }
+                            }
+                            else{
+                                $evntlog=$conn->query("SELECT * FROM events WHERE event_type='Storm Escalation Warning' ORDER BY created_at DESC LIMIT 1");
+                                if($evntlog && $evntlog->num_rows>0){
+                                    $pevent=$evntlog->fetch_assoc();
+                                    echo "<p class='status-warning'>".$pevent['event_type']."</p>";
+                                }
+                            }
+                            
+                            $evnint=$conn->query("SELECT * FROM events WHERE event_type='Storm Escalation Warning' ORDER BY created_at DESC LIMIT 1");
+                            $insevt=true;
+                            if($evnint && $evnint->num_rows>0){
+                                $pevent=$evnint->fetch_assoc();
+                                $ptime=strtotime($pevent['created_at']);
+                                $ctime=time();
+                                if(($ctime-$ptime)<600){
+                                    $insevt=false;
+                                }
+                            }
+                            if($insevt){
+                            $conn->query("INSERT INTO events (event_type, notes)
+                            SELECT 'Storm Escalation Warning', 'Storm intensity rising toward extreme levels.'
+                            FROM dual
+                            WHERE NOT EXISTS (
+                                SELECT 1 FROM events 
+                                WHERE event_type='Storm Escalation Warning'
+                                AND created_at >= NOW() - INTERVAL 10 MINUTE
+                            )
+                            ");
+                        }
+                        }   
+                        else{
+                            echo "<p class='status-safe'>No significant storm escalation detected.</p>";
+                        }             
+                    }
+                echo "</div>";
+            }
+        }
+        else{
+            echo "<p>No power data yet....</p>";
+        }
+        
+    ?>
+    <?php if(!$isRefresh): ?>
+    </div> <script src="../assets/js/astro.js"></script>
+<?php include '../includes/footer.php';?>
 <?php endif; ?>
